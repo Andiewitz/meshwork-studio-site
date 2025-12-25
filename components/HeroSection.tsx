@@ -1,5 +1,6 @@
 import React from 'react';
 import DiagramCanvas from './DiagramCanvas';
+import NeoButton from './NeoButton';
 
 const HeroSection: React.FC = () => {
   return (
@@ -14,7 +15,7 @@ const HeroSection: React.FC = () => {
           <h1 className="font-display font-bold text-5xl lg:text-7xl leading-[1.1] tracking-tight">
             Architect your <br/>
             <span className="text-primary underline decoration-4 decoration-secondary underline-offset-4">Distributed Systems</span>
-            visually.
+            {' '}visually.
           </h1>
           
           <p className="text-lg lg:text-xl text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed">
@@ -22,14 +23,15 @@ const HeroSection: React.FC = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <a href="#" className="inline-flex justify-center items-center bg-primary text-white px-8 py-4 font-bold text-lg border-2 border-neo-border dark:border-white shadow-neo dark:shadow-neo-dark hover:translate-x-1 hover:translate-y-1 hover:shadow-none dark:hover:shadow-none transition-all rounded-lg">
+            <NeoButton href="#" variant="primary" size="lg">
               Try as Guest Architect
               <span className="material-icons-outlined ml-2">arrow_forward</span>
-            </a>
-            <a href="#" className="inline-flex justify-center items-center bg-surface-light dark:bg-surface-dark text-text-light dark:text-white px-8 py-4 font-bold text-lg border-2 border-neo-border dark:border-white shadow-neo dark:shadow-neo-dark hover:translate-x-1 hover:translate-y-1 hover:shadow-none dark:hover:shadow-none transition-all rounded-lg">
+            </NeoButton>
+            
+            <NeoButton href="#" variant="outline" size="lg">
               <span className="material-icons-outlined mr-2">play_circle</span>
               Watch Demo
-            </a>
+            </NeoButton>
           </div>
 
           <div className="flex items-center gap-4 text-sm font-medium text-gray-500 dark:text-gray-400 pt-4">

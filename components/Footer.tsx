@@ -1,4 +1,5 @@
 import React from 'react';
+import Logo from './Logo';
 
 const Footer: React.FC = () => {
   return (
@@ -7,9 +8,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-primary border-2 border-neo-border dark:border-white flex items-center justify-center shadow-neo-sm dark:shadow-neo-sm-dark">
-                        <span className="text-white font-bold font-display text-lg">M</span>
-                    </div>
+                    <Logo variant="icon" />
                     <span className="font-display font-bold text-xl">Meshwork Studio</span>
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
