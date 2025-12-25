@@ -20,8 +20,8 @@ const DiagramCanvas: React.FC = () => {
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         {/* Scaled Scene Container - Fixed 500x500 coordinate system for the diagram */}
-        {/* scale-75 reduces it to 75% size to provide whitespace margin */}
-        <div className="relative w-[500px] h-[500px] transform scale-75 origin-center shrink-0 select-none">
+        {/* scale-[0.6] reduces it to 60% size to provide whitespace margin and fit smaller container */}
+        <div className="relative w-[500px] h-[500px] transform scale-[0.6] origin-center shrink-0 select-none">
             
             {/* Connections SVG - strictly defined viewbox matching container */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 500 500" style={{ stroke: '#4b5563', strokeWidth: '2px' }}>
