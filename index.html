@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meshwork Studio - Distributed Systems Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#7C3AED", // Violet
+              secondary: "#10B981", // Emerald
+              accent: "#F59E0B", // Amber
+              "background-light": "#FDFBF7",
+              "background-dark": "#18181B",
+              "surface-light": "#FFFFFF",
+              "surface-dark": "#27272A",
+              "text-light": "#18181B",
+              "text-dark": "#F4F4F5",
+              "neo-border": "#18181B",
+            },
+            fontFamily: {
+              display: ["Space Grotesk", "sans-serif"],
+              sans: ["Inter", "sans-serif"],
+            },
+            boxShadow: {
+              'neo': '4px 4px 0px 0px #18181B',
+              'neo-sm': '2px 2px 0px 0px #18181B',
+              'neo-lg': '8px 8px 0px 0px #18181B',
+              'neo-dark': '4px 4px 0px 0px #F4F4F5',
+              'neo-sm-dark': '2px 2px 0px 0px #F4F4F5',
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+            },
+            animation: {
+              marquee: 'marquee 30s linear infinite',
+            },
+            keyframes: {
+              marquee: {
+                '0%': { transform: 'translateX(0%)' },
+                '100%': { transform: 'translateX(-100%)' },
+              }
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, rgba(24, 24, 27, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(24, 24, 27, 0.05) 1px, transparent 1px);
+        }
+        .dark .grid-bg {
+            background-image:
+                linear-gradient(to right, rgba(244, 244, 245, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(244, 244, 245, 0.05) 1px, transparent 1px);
+        }
+
+        /* Native Scrollbar Styling - Neo-Brutalist */
+        ::-webkit-scrollbar {
+            width: 16px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #FDFBF7; /* background-light */
+            border-left: 2px solid #18181B;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #18181B; /* background-dark */
+            border-left: 2px solid #FFFFFF;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #7C3AED; /* primary */
+            border: 2px solid #18181B;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #6D28D9; /* Darker violet */
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            border: 2px solid #FFFFFF;
+        }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
+  <body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-sans transition-colors duration-300">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
