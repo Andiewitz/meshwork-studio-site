@@ -3,99 +3,137 @@ import React, { useEffect, useRef } from 'react';
 const features = [
   {
     title: "Visual Canvas",
-    description: "Drag and drop components to build your architecture. Connect services with intuitive lines.",
+    description: "Drag and drop components to build your architecture.",
     icon: "draw",
     color: "blue",
-    hex: "#3b82f6" // blue-500
+    hex: "#3b82f6"
   },
   {
     title: "Real-time Sync",
-    description: "Collaborate with your team in real-time. See changes as they happen instantly.",
+    description: "Collaborate with your team in real-time. See changes instantly.",
     icon: "sync",
     color: "purple",
-    hex: "#a855f7" // purple-500
+    hex: "#a855f7"
   },
   {
     title: "Export IaC",
-    description: "Turn your diagrams into production-ready Terraform, Pulumi, and CloudFormation.",
+    description: "Turn diagrams into production-ready Terraform and Pulumi.",
     icon: "code",
     color: "emerald",
-    hex: "#10b981" // emerald-500
+    hex: "#10b981"
+  },
+  {
+    title: "Policy Engine",
+    description: "Enforce compliance and security rules directly on edges.",
+    icon: "gavel",
+    color: "orange",
+    hex: "#f97316"
+  },
+  {
+    title: "Cost Analysis",
+    description: "Estimate infrastructure costs before you deploy.",
+    icon: "attach_money",
+    color: "pink",
+    hex: "#ec4899"
   }
 ];
 
 const FeaturesGrid: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const horizontalTrackRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!containerRef.current || !innerRef.current) return;
+      if (!containerRef.current || !stickyRef.current || !innerRef.current || !horizontalTrackRef.current) return;
+
+      const container = containerRef.current;
       
-      const rect = containerRef.current.getBoundingClientRect();
+      // Get dimensions
+      const containerTop = container.offsetTop;
+      const containerHeight = container.offsetHeight;
       const windowHeight = window.innerHeight;
-      const elementHeight = rect.height;
+      const scrollY = window.scrollY;
 
-      // Calculate ratio (0 to 1) of element passage through viewport
-      // 0 = top of element just entering bottom of viewport
-      // 1 = bottom of element just leaving top of viewport
-      const totalDistance = windowHeight + elementHeight;
-      const currentPos = windowHeight - rect.top;
-      let scrollRatio = currentPos / totalDistance;
-
-      // Clamp to 0-1 for safety
-      scrollRatio = Math.max(0, Math.min(1, scrollRatio));
-
-      // Calculate Animation Progress (0 -> 1 -> 0)
-      // Using Sine wave to expand and contract smoothly based on scroll position.
-      // Multiplied by 1.5 and clamped to 1 to create a 'plateau' in the middle 
-      // where it stays fully expanded while the user reads the content.
-      let animationProgress = Math.min(1, Math.sin(scrollRatio * Math.PI) * 1.5);
+      // START POINT: When the top of the container enters the viewport from the bottom.
+      // We add a small buffer (20px) so it triggers as soon as the user sees it (requested "like 12 pixels").
+      const startOffset = containerTop - windowHeight + 20; 
       
-      // Ensure it's not negative
-      animationProgress = Math.max(0, animationProgress);
-
-      const target = innerRef.current;
+      // END POINT: When the container finishes scrolling (bottom aligns with bottom of viewport)
+      const endOffset = containerTop + containerHeight - windowHeight;
       
-      // Calculate Clip Path parameters for smooth interpolation
-      // At progress 0 (Cube): 50% inset, 120px offset => 240px centered square
-      // At progress 1 (Full): 0% inset, 0px offset => Full size
-      const percentage = 50 * (1 - animationProgress);
-      const pixelOffset = 120 * (1 - animationProgress);
-      // Increased max border radius to 60px for smoother, rounder look
-      const borderRadius = 60 * (1 - animationProgress); 
-      
-      // Apply styles directly to DOM to avoid React render cycle overhead (60fps target)
-      target.style.clipPath = `inset(calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) round ${borderRadius}px)`;
+      let progress = (scrollY - startOffset) / (endOffset - startOffset);
+      progress = Math.max(0, Math.min(1, progress));
 
-      // Overlay Opacity: Visible only when nearly collapsed (Start/End)
-      if (overlayRef.current) {
-         // Fades out quickly as it starts expanding
-         const overlayOpacity = Math.max(0, 1 - animationProgress * 3);
-         overlayRef.current.style.opacity = overlayOpacity.toString();
-         // Scale down slightly as it fades out
-         const overlayScale = 1 - (animationProgress * 0.5);
-         overlayRef.current.style.transform = `scale(${overlayScale})`;
+      // ANIMATION PHASES (0.0 to 1.0)
+      // Total scroll distance is roughly containerHeight (500vh).
+      // The "Entry" phase (moving from bottom to top of screen) is approx 20% of the total distance (100vh / 500vh).
+      
+      // Phase 1: Expansion (0% -> 6%) 
+      // This happens while the element is rising from the bottom. 
+      // It will be fully expanded by the time it is ~30% up the screen.
+      const P1_EXPAND_END = 0.06; 
+      
+      // Phase 2: Hold (6% -> 30%) 
+      // Includes the rest of the travel up the screen and a pause at the top.
+      const P2_HOLD_END = 0.30;
+      
+      // Phase 3: Reveal (30% -> 40%)
+      // Content fades in.
+      const P3_REVEAL_END = 0.40;
+      
+      // Phase 4: Scroll (40% -> 100%)
+      // Horizontal movement.
+
+      // --- 1. EXPANSION ---
+      let expansionProgress = progress / P1_EXPAND_END;
+      expansionProgress = Math.max(0, Math.min(1, expansionProgress));
+      
+      const easedExpansion = 1 - Math.pow(1 - expansionProgress, 3); // Cubic ease out
+
+      const percentage = 50 * (1 - easedExpansion);
+      const pixelOffset = 120 * (1 - easedExpansion);
+      const borderRadius = 60 * (1 - easedExpansion);
+
+      innerRef.current.style.clipPath = `inset(calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) calc(${percentage}% - ${pixelOffset}px) round ${borderRadius}px)`;
+
+      // --- 2. REVEAL ---
+      let revealProgress = 0;
+      if (progress > P2_HOLD_END) {
+          revealProgress = (progress - P2_HOLD_END) / (P3_REVEAL_END - P2_HOLD_END);
+          revealProgress = Math.max(0, Math.min(1, revealProgress));
       }
 
-      // Content Opacity: Visible when expanded
-      if (contentRef.current) {
-         // Fades in as it expands
-         const contentOpacity = Math.max(0, Math.min(1, (animationProgress - 0.3) * 2));
-         contentRef.current.style.opacity = contentOpacity.toString();
-         
-         // Subtle scale up effect for content entry
-         const scale = 0.95 + (0.05 * contentOpacity);
-         contentRef.current.style.transform = `scale(${scale})`;
+      if (horizontalTrackRef.current) {
+          horizontalTrackRef.current.style.opacity = revealProgress.toString();
+          // Slight upward drift during reveal
+          const yDrift = 50 * (1 - revealProgress);
+          horizontalTrackRef.current.style.transform = `translateY(${yDrift}px)`;
+      }
+      
+      if (headerRef.current) {
+          headerRef.current.style.opacity = revealProgress.toString();
+          headerRef.current.style.transform = `translateY(${30 * (1 - revealProgress)}px)`;
+      }
+
+      // --- 3. HORIZONTAL SCROLL ---
+      if (progress > P3_REVEAL_END) {
+          const scrollProgress = (progress - P3_REVEAL_END) / (1 - P3_REVEAL_END);
+          
+          const trackWidth = horizontalTrackRef.current.scrollWidth;
+          const viewportWidth = window.innerWidth;
+          
+          const maxTranslate = -(trackWidth - viewportWidth + 100); 
+          const currentTranslate = maxTranslate * scrollProgress;
+          
+          horizontalTrackRef.current.style.transform = `translateX(${currentTranslate}px)`;
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
-    
-    // Initial calculation on mount
     handleScroll();
 
     return () => {
@@ -105,101 +143,110 @@ const FeaturesGrid: React.FC = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full min-h-[100vh] relative flex justify-center items-center py-24 lg:py-32 bg-background-light dark:bg-background-dark">
+    // Height 500vh to give ample scroll room
+    <div ref={containerRef} className="w-full h-[500vh] relative bg-background-light dark:bg-background-dark">
        
-       {/* 
-          The Expandable Container
-          Using clip-path for high-performance scroll-linked animation.
-       */}
-       <div 
-          ref={innerRef}
-          className="relative bg-[#121212] shadow-2xl will-change-[clip-path]"
-          style={{
-            width: '100%',
-            maxWidth: '100%',
-            // Initial state (overridden by JS immediately)
-            clipPath: 'inset(calc(50% - 120px) calc(50% - 120px) calc(50% - 120px) calc(50% - 120px) round 60px)',
-          }}
-       >
-           {/* Background Grid mimicking the Canvas - Always visible inside the clipped area */}
-           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-          
-           {/* 
-              The 'Cube' Face Overlay 
-              Visible ONLY when collapsed (Start/End of scroll). 
-              Acts as the initial visual anchor.
-           */}
+       <div ref={stickyRef} className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
+           
+           {/* The Expandable "Cube" Box */}
            <div 
-             ref={overlayRef}
-             className="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none origin-center"
+              ref={innerRef}
+              className="relative w-full h-full bg-[#121212] shadow-2xl will-change-[clip-path] flex flex-col"
+              style={{
+                clipPath: 'inset(calc(50% - 120px) calc(50% - 120px) calc(50% - 120px) calc(50% - 120px) round 60px)',
+              }}
            >
-              <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(124,58,237,0.5)]">
-                 <span className="material-icons-outlined text-white text-4xl">hub</span>
-              </div>
-              <div className="mt-4 font-display font-bold text-white tracking-widest uppercase text-xs">System Core</div>
-           </div>
-
-           {/* 
-              Main Content Grid 
-              Fades IN as the box expands.
-           */}
-           <div 
-             ref={contentRef}
-             className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-24 lg:py-32 origin-center"
-             style={{ opacity: 0 }}
-            >
-            
-            {/* Section Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center gap-2 bg-[#2d2d2d] border border-gray-600 px-5 py-2.5 rounded-full shadow-lg mb-6">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-gray-300 font-mono font-bold tracking-widest uppercase text-sm">System Modules</span>
-                </div>
-                <h2 className="font-display font-bold text-4xl lg:text-5xl text-white">Powering Your Infrastructure</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-              {features.map((feature, index) => (
-                <div key={index} className="flex flex-col items-center group">
-                    {/* Node Card */}
-                    <div 
-                        className={`
-                            relative bg-[#1e1e1e] w-full p-8 lg:p-10 rounded-3xl
-                            border-2 border-${feature.color}-500 
-                            shadow-[0_0_20px_rgba(0,0,0,0.5)] 
-                            hover:shadow-[0_0_40px_rgba(${parseInt(feature.hex.slice(1,3),16)},${parseInt(feature.hex.slice(3,5),16)},${parseInt(feature.hex.slice(5,7),16)},0.3)]
-                            hover:-translate-y-2
-                            transition-all duration-300
-                            flex flex-col items-center text-center
-                        `}
-                    >
-                        {/* Icon Container */}
-                        <div className={`
-                            w-20 h-20 mb-8 rounded-2xl 
-                            bg-${feature.color}-900/20 
-                            border border-${feature.color}-500/30
-                            flex items-center justify-center
-                            group-hover:scale-110 transition-transform duration-500
-                            shadow-inner
-                        `}>
-                            <span className={`material-icons-outlined text-${feature.color}-400 text-4xl`}>{feature.icon}</span>
+               {/* Background Grid */}
+               <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+              
+               {/* Main Content Area */}
+               <div className="relative z-10 w-full h-full flex flex-col justify-center">
+                    
+                    {/* Fixed Header */}
+                    <div ref={headerRef} className="text-center absolute top-10 lg:top-16 left-0 right-0 z-20 opacity-0 will-change-[opacity,transform]">
+                        <div className="inline-flex items-center gap-2 bg-[#2d2d2d] border border-gray-600 px-5 py-2.5 rounded-full shadow-lg mb-6">
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-gray-300 font-mono font-bold tracking-widest uppercase text-sm">System Pipeline</span>
                         </div>
+                        <h2 className="font-display font-bold text-4xl lg:text-5xl text-white">Architecture Flow</h2>
+                    </div>
 
-                        <h3 className="font-display font-bold text-2xl lg:text-3xl text-white mb-4 tracking-tight">{feature.title}</h3>
-                        <p className="text-gray-400 text-sm lg:text-base leading-relaxed font-medium">
-                            {feature.description}
-                        </p>
+                    {/* Horizontal Scroll Track */}
+                    <div className="w-full flex items-center overflow-visible pl-[50vw] pr-[20vw] h-[60vh]">
+                        <div ref={horizontalTrackRef} className="flex gap-24 lg:gap-32 items-center will-change-transform opacity-0">
+                            
+                            {/* Connection Line Layer */}
+                            <svg className="absolute top-1/2 left-0 w-full h-24 -translate-y-1/2 -z-10 pointer-events-none overflow-visible">
+                                <path 
+                                    d={`M 0 50 L ${features.length * 600} 50`} 
+                                    stroke="#4b5563" 
+                                    strokeWidth="2" 
+                                    strokeDasharray="8 8" 
+                                    fill="none"
+                                />
+                                <circle r="4" fill="#3b82f6">
+                                    <animateMotion dur="3s" repeatCount="indefinite" path={`M 0 50 L ${features.length * 600} 50`} />
+                                </circle>
+                                <circle r="4" fill="#a855f7">
+                                    <animateMotion dur="3s" repeatCount="indefinite" begin="1s" path={`M 0 50 L ${features.length * 600} 50`} />
+                                </circle>
+                                <circle r="4" fill="#10b981">
+                                    <animateMotion dur="3s" repeatCount="indefinite" begin="2s" path={`M 0 50 L ${features.length * 600} 50`} />
+                                </circle>
+                            </svg>
 
-                        {/* Tech details decoration */}
-                        <div className="mt-8 w-full pt-6 border-t border-gray-800 flex justify-between text-[10px] text-gray-600 font-mono uppercase tracking-widest">
-                            <span>Status: <span className="text-green-500 font-bold">Active</span></span>
-                            <span>v1.0.{index + 1}</span>
+                            {features.map((feature, index) => (
+                                <div key={index} className="relative flex-shrink-0 w-[80vw] sm:w-[400px]">
+                                    {/* Connection Point Left */}
+                                    {index > 0 && (
+                                        <div className="absolute top-1/2 -left-16 lg:-left-20 w-8 h-8 -translate-y-1/2 bg-[#121212] border-2 border-gray-600 rounded-full flex items-center justify-center z-0">
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                        </div>
+                                    )}
+
+                                    {/* Node Card */}
+                                    <div 
+                                        className={`
+                                            relative bg-[#1e1e1e] w-full p-8 lg:p-10 rounded-3xl
+                                            border-2 border-${feature.color}-500 
+                                            shadow-[0_0_20px_rgba(0,0,0,0.5)] 
+                                            flex flex-col items-center text-center z-10
+                                            group
+                                        `}
+                                    >
+                                        <div className={`
+                                            w-20 h-20 mb-6 rounded-2xl 
+                                            bg-${feature.color}-900/20 
+                                            border border-${feature.color}-500/30
+                                            flex items-center justify-center
+                                            shadow-inner
+                                        `}>
+                                            <span className={`material-icons-outlined text-${feature.color}-400 text-4xl`}>{feature.icon}</span>
+                                        </div>
+
+                                        <h3 className="font-display font-bold text-3xl text-white mb-4">{feature.title}</h3>
+                                        <p className="text-gray-400 text-base leading-relaxed">
+                                            {feature.description}
+                                        </p>
+
+                                        <div className="mt-8 w-full pt-4 border-t border-gray-800 flex justify-between text-[10px] text-gray-500 font-mono uppercase tracking-widest">
+                                            <span>Node ID: {index.toString().padStart(2, '0')}</span>
+                                            <span className={`text-${feature.color}-400`}>Online</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Connection Point Right */}
+                                    {index < features.length - 1 && (
+                                        <div className="absolute top-1/2 -right-16 lg:-right-20 w-8 h-8 -translate-y-1/2 bg-[#121212] border-2 border-gray-600 rounded-full flex items-center justify-center z-0">
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </div>
-              ))}
-            </div>
-          </div>
+               </div>
+           </div>
        </div>
     </div>
   );
